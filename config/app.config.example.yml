@@ -1,0 +1,8 @@
+app:
+  name: WWW.MMRWA.COM
+  env: development
+server:
+  host: 127.0.0.1
+  port: 3000
+logging:
+  level: info
