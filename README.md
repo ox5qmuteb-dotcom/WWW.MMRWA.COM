@@ -22,7 +22,7 @@ See `docs/project-structure.md` for the full structure.
 
 1. Clone this repository.
 2. Copy `.env.example` to `.env` and adjust values.
-3. Copy `config/app.config.example.yml` to a local config file and adjust values.
+3. Copy `config/app.config.example.yml` to `config/app.config.local.yml` and adjust values.
 4. Review `docs/development-environment.md`.
 5. Create a feature branch from `main`.
 

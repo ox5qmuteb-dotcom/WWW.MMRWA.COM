@@ -14,6 +14,7 @@
 ├── config/
 ├── docs/
 ├── frontend/
+│   ├── README.md
 │   └── public/
 ├── CHANGELOG.md
 ├── CODE_OF_CONDUCT.md

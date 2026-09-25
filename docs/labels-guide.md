@@ -7,6 +7,7 @@ Recommended baseline labels:
 - `documentation` - Documentation updates
 - `chore` - Maintenance work
 - `dependencies` - Dependency updates
+- `coc-report` - Code of Conduct and moderation reports
 - `good first issue` - New contributor friendly
 - `help wanted` - Community contributions requested
 - `priority:high` - High urgency
