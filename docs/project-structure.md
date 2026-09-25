@@ -6,12 +6,18 @@
 ├── .env.example
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
-│   ├── workflows/
+│   │   ├── bug_report.yml
+│   │   ├── config.yml
+│   │   └── feature_request.yml
 │   ├── pull_request_template.md
-│   └── release.yml
+│   ├── release.yml
+│   └── workflows/
+│       ├── cd.yml
+│       └── ci.yml
 ├── .gitignore
 ├── backend/
 ├── config/
+│   └── app.config.example.yml
 ├── docs/
 ├── frontend/
 │   ├── README.md
