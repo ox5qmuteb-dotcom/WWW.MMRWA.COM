@@ -22,6 +22,8 @@
 ├── frontend/
 │   ├── README.md
 │   └── public/
+│       ├── .nojekyll
+│       └── index.html
 ├── CHANGELOG.md
 ├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
