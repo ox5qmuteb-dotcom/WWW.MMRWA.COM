@@ -39,7 +39,8 @@ individual is officially representing the project in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers at conduct@mmrwa.com.
+reported privately through GitHub Support:
+https://support.github.com/contact/report-abuse
 
 ## Attribution
 

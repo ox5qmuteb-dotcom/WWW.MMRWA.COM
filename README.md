@@ -22,7 +22,8 @@ See `docs/project-structure.md` for the full structure.
 
 1. Clone this repository.
 2. Copy `.env.example` to `.env` and adjust values.
-3. Review `docs/development-environment.md`.
+3. Copy `config/app.config.example.yml` to a local config file and adjust values.
+4. Review `docs/development-environment.md`.
 4. Create a feature branch from `main`.
 
 ## Development Workflow
@@ -35,7 +36,3 @@ See `docs/project-structure.md` for the full structure.
 
 - CI workflow checks repository baseline quality.
 - CD workflow deploys `frontend/public` to GitHub Pages on pushes to `main` and on manual dispatch.
-
-## License
-
-This repository uses Apache 2.0 licensing.
