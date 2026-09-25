@@ -39,7 +39,7 @@ individual is officially representing the project in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to project maintainers by opening an issue labeled `coc-report`.
+reported privately to project maintainers at conduct@mmrwa.com.
 If the incident includes platform abuse or urgent safety concerns, also report
 through GitHub Support: https://support.github.com/contact/report-abuse
 
