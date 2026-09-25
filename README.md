@@ -38,4 +38,4 @@ See `docs/project-structure.md` for the full structure.
 
 ## License
 
-Licensed under Apache 2.0. See `LICENSE`.
+This repository uses Apache 2.0 licensing.
