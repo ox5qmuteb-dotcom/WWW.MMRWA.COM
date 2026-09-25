@@ -1,0 +1,38 @@
+name: Weather Dashboard Verify
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/public/**'
+      - 'docs/**'
+      - 'README.md'
+      - '.github/workflows/weather-dashboard-verify.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/public/**'
+      - 'docs/**'
+      - 'README.md'
+      - '.github/workflows/weather-dashboard-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-weather-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate repository structure
+        run: |
+          test -d frontend
+          test -d backend
+          test -d config
+          test -d docs
+          test -f frontend/public/index.html
+          test -f frontend/public/weather-dashboard/index.html
+
+      - name: Run weather verification
+        run: node frontend/public/weather-dashboard/tests/verify.mjs
