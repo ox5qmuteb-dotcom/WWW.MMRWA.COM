@@ -25,6 +25,8 @@ const i18n = {
     networkError: 'تعذّر الاتصال بالخدمة. تحقق من الشبكة ثم حاول مرة أخرى.',
     geoUnsupported: 'متصفحك لا يدعم تحديد الموقع الجغرافي.',
     geoDenied: 'تم رفض الوصول إلى الموقع.',
+    geoUnavailable: 'تعذّر تحديد موقعك حاليًا. حاول مرة أخرى.',
+    geoTimeout: 'انتهت مهلة تحديد الموقع. حاول مرة أخرى.',
     geoLoading: 'جارٍ تحديد موقعك...',
     invalidData: 'بيانات الطقس المستلمة غير مكتملة.',
     myLocation: 'موقعي الحالي',
@@ -57,6 +59,8 @@ const i18n = {
     networkError: 'Unable to reach weather services. Check your connection and retry.',
     geoUnsupported: 'Your browser does not support geolocation.',
     geoDenied: 'Location access was denied.',
+    geoUnavailable: 'Unable to determine your location right now. Please retry.',
+    geoTimeout: 'Location request timed out. Please retry.',
     geoLoading: 'Detecting your location...',
     invalidData: 'Received incomplete weather payload.',
     myLocation: 'My location',
@@ -107,8 +111,14 @@ const els = {
   riskCards: document.getElementById('riskCards'),
   appTitle: document.getElementById('appTitle'),
   appSubtitle: document.getElementById('appSubtitle'),
+  searchLabel: document.getElementById('searchLabel'),
+  searchHint: document.getElementById('searchHint'),
   prototypeTitle: document.getElementById('prototypeTitle'),
   prototypeIntro: document.getElementById('prototypeIntro'),
+  currentTitle: document.getElementById('currentTitle'),
+  metricsTitle: document.getElementById('metricsTitle'),
+  hourlyTitle: document.getElementById('hourlyTitle'),
+  dailyTitle: document.getElementById('dailyTitle'),
   lblFeelsLike: document.getElementById('lblFeelsLike'),
   lblHumidity: document.getElementById('lblHumidity'),
   lblWind: document.getElementById('lblWind'),
@@ -122,15 +132,24 @@ const state = {
   lang: 'ar',
   unit: 'celsius',
   latestWeather: null,
-  latestLocationLabel: '',
+  latestLocationLabel: null,
   latestCoords: null,
   suggestionTimer: null,
   lastSuggestionQuery: '',
-  requestKey: ''
+  activeSuggestionToken: 0,
+  requestKey: '',
+  activeRequestToken: 0,
+  activeWeatherController: null
 };
 
 function t() {
   return i18n[state.lang];
+}
+
+function labelForCurrentLanguage(labelValue) {
+  if (!labelValue) return '';
+  if (typeof labelValue === 'string') return labelValue;
+  return labelValue[state.lang] || labelValue.ar || labelValue.en || '';
 }
 
 function setStatus(message, type = 'info') {
@@ -164,8 +183,12 @@ function isValidCoordinate(lat, lon) {
   return Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }
 
-async function fetchJson(url) {
+async function fetchJson(url, upstreamSignal) {
   const controller = new AbortController();
+  const abortFromUpstream = () => controller.abort();
+  if (upstreamSignal) {
+    upstreamSignal.addEventListener('abort', abortFromUpstream, { once: true });
+  }
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const response = await fetch(url, {
@@ -181,6 +204,9 @@ async function fetchJson(url) {
   } catch {
     throw new Error('network_failed');
   } finally {
+    if (upstreamSignal) {
+      upstreamSignal.removeEventListener('abort', abortFromUpstream);
+    }
     clearTimeout(timeout);
   }
 }
@@ -198,7 +224,7 @@ async function geocodeCity(cityName) {
     : [];
 }
 
-async function fetchWeather(lat, lon) {
+async function fetchWeather(lat, lon, signal) {
   if (!isValidCoordinate(lat, lon)) {
     throw new Error('invalid_payload');
   }
@@ -213,7 +239,7 @@ async function fetchWeather(lat, lon) {
     forecast_days: '7'
   });
 
-  const payload = await fetchJson(`${API.forecast}?${params.toString()}`);
+  const payload = await fetchJson(`${API.forecast}?${params.toString()}`, signal);
   if (!validateWeatherPayload(payload)) {
     throw new Error('invalid_payload');
   }
@@ -307,8 +333,9 @@ function updateDaily(data) {
 }
 
 function renderWeather(data, label) {
+  const labelText = labelForCurrentLanguage(label);
   const weather = wmoToDescriptor(data.current.weather_code, state.lang);
-  els.locationLabel.textContent = label;
+  els.locationLabel.textContent = labelText;
   els.currentTime.textContent = formatDateTime(data.current.time);
   els.currentTemp.textContent = formatTemperature(data.current.temperature_2m, state.unit);
   els.currentText.textContent = `${weather.icon} ${weather.text}`;
@@ -343,6 +370,16 @@ function setLanguage(next) {
   els.searchBtn.textContent = next === 'ar' ? 'بحث / Search' : 'Search';
   els.locateBtn.textContent = next === 'ar' ? 'موقعي / My location' : 'My location';
   els.refreshBtn.textContent = next === 'ar' ? 'تحديث / Refresh' : 'Refresh';
+  els.searchLabel.textContent = next === 'ar' ? 'ابحث عن مدينة / Search city' : 'Search city';
+  els.searchHint.textContent = next === 'ar'
+    ? 'ادخل اسم مدينة بالحروف فقط. / Use letters, spaces, hyphen, apostrophe.'
+    : 'Use letters, spaces, hyphen, apostrophe.';
+  els.currentTitle.textContent = next === 'ar' ? 'الطقس الحالي / Current weather' : 'Current weather';
+  els.metricsTitle.textContent = next === 'ar' ? 'المؤشرات الأساسية / Key metrics' : 'Key metrics';
+  els.hourlyTitle.textContent = next === 'ar' ? 'الساعات القادمة / Next hours' : 'Next hours';
+  els.dailyTitle.textContent = next === 'ar' ? '7 أيام / 7-day forecast' : '7-day forecast';
+  els.langToggle.setAttribute('aria-label', next === 'ar' ? 'تبديل اللغة' : 'Toggle language');
+  els.suggestions.setAttribute('aria-label', next === 'ar' ? 'اقتراحات المدن' : 'City suggestions');
   els.footerText.textContent = next === 'ar'
     ? 'Data: Open-Meteo Geocoding & Forecast APIs (no API key). | البيانات من Open-Meteo بدون مفتاح API.'
     : 'Data source: Open-Meteo Geocoding & Forecast APIs (no API key).';
@@ -372,40 +409,75 @@ function setUnit(nextUnit) {
 
 async function loadWeatherForCoordinates(lat, lon, label, force) {
   const shouldForce = Boolean(force);
+  const normalizedLabel = typeof label === 'object'
+    ? label
+    : { ar: label || '', en: label || '' };
   const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
-  if (state.requestKey === key) {
-    return;
+  if (state.requestKey === key && !shouldForce && state.latestCoords && state.latestWeather) {
+    const sameLat = Math.abs(state.latestCoords.lat - lat) < 0.001;
+    const sameLon = Math.abs(state.latestCoords.lon - lon) < 0.001;
+    if (sameLat && sameLon) {
+      return;
+    }
   }
   if (!shouldForce && state.latestCoords) {
     const sameLat = Math.abs(state.latestCoords.lat - lat) < 0.001;
     const sameLon = Math.abs(state.latestCoords.lon - lon) < 0.001;
     if (sameLat && sameLon && state.latestWeather) {
-      renderWeather(state.latestWeather, label || state.latestLocationLabel);
+      renderWeather(state.latestWeather, normalizedLabel || state.latestLocationLabel);
       setStatus(t().cityLoaded, 'success');
       return;
     }
   }
 
   state.requestKey = key;
+  const requestToken = state.activeRequestToken + 1;
+  state.activeRequestToken = requestToken;
+  if (state.activeWeatherController) {
+    state.activeWeatherController.abort();
+  }
+  const weatherController = new AbortController();
+  state.activeWeatherController = weatherController;
   setLoading(true);
   setStatus(t().loadingWeather);
   try {
-    const weather = await fetchWeather(lat, lon);
+    const weather = await fetchWeather(lat, lon, weatherController.signal);
+    if (requestToken !== state.activeRequestToken) {
+      return;
+    }
     state.latestCoords = { lat, lon };
     state.latestWeather = weather;
-    state.latestLocationLabel = label;
-    renderWeather(weather, label);
+    state.latestLocationLabel = normalizedLabel;
+    renderWeather(weather, normalizedLabel);
     setStatus(t().cityLoaded, 'success');
   } catch (error) {
+    if (requestToken !== state.activeRequestToken) {
+      return;
+    }
     setStatus(error.message === 'invalid_payload' ? t().invalidData : t().networkError, 'error');
   } finally {
-    setLoading(false);
-    state.requestKey = '';
+    if (requestToken === state.activeRequestToken) {
+      setLoading(false);
+      state.requestKey = '';
+      if (state.activeWeatherController === weatherController) {
+        state.activeWeatherController = null;
+      }
+    }
   }
 }
 
 function suggestionLabel(entry) {
   return [entry.name, entry.admin1, entry.country].filter(Boolean).join(', ');
+}
+
+function suggestionLabelObject(entry) {
+  const ar = suggestionLabel(entry);
+  const en = [entry.name_ascii || entry.name, entry.admin1, entry.country].filter(Boolean).join(', ');
+  return { ar, en: en || ar };
+}
+
+function myLocationLabel() {
+  return { ar: i18n.ar.myLocation, en: i18n.en.myLocation };
 }
 
 function clearSuggestions() {
@@ -421,8 +493,9 @@ function renderSuggestions(results) {
     button.role = 'option';
     button.addEventListener('click', () => {
       clearSuggestions();
-      els.cityInput.value = suggestionLabel(entry);
-      loadWeatherForCoordinates(entry.latitude, entry.longitude, suggestionLabel(entry));
+      const label = suggestionLabelObject(entry);
+      els.cityInput.value = labelForCurrentLanguage(label);
+      loadWeatherForCoordinates(entry.latitude, entry.longitude, label);
     });
     els.suggestions.append(button);
   });
@@ -439,6 +512,7 @@ async function submitSearch(event) {
   clearSuggestions();
   setLoading(true);
   setStatus(t().searching);
+  let weatherLoadDelegated = false;
   try {
     const results = await geocodeCity(query);
     if (!results.length) {
@@ -446,11 +520,14 @@ async function submitSearch(event) {
       return;
     }
     const target = results[0];
-    await loadWeatherForCoordinates(target.latitude, target.longitude, suggestionLabel(target));
+    weatherLoadDelegated = true;
+    await loadWeatherForCoordinates(target.latitude, target.longitude, suggestionLabelObject(target));
   } catch {
     setStatus(t().networkError, 'error');
   } finally {
-    setLoading(false);
+    if (!weatherLoadDelegated) {
+      setLoading(false);
+    }
   }
 }
 
@@ -458,14 +535,26 @@ function onCityInput() {
   const query = sanitizeCityQuery(els.cityInput.value);
   clearTimeout(state.suggestionTimer);
   if (query.length < 2 || query === state.lastSuggestionQuery) {
-    if (query.length < 2) clearSuggestions();
+    if (query.length < 2) {
+      state.lastSuggestionQuery = '';
+      state.activeSuggestionToken += 1;
+      clearSuggestions();
+    }
     return;
   }
 
+  const suggestionToken = state.activeSuggestionToken + 1;
+  state.activeSuggestionToken = suggestionToken;
   state.suggestionTimer = setTimeout(async () => {
     try {
       state.lastSuggestionQuery = query;
       const results = await geocodeCity(query);
+      if (suggestionToken !== state.activeSuggestionToken) {
+        return;
+      }
+      if (sanitizeCityQuery(els.cityInput.value) !== query) {
+        return;
+      }
       renderSuggestions(results);
     } catch {
       clearSuggestions();
@@ -485,9 +574,19 @@ function detectLocation() {
         setStatus(t().invalidData, 'error');
         return;
       }
-      await loadWeatherForCoordinates(coords.latitude, coords.longitude, t().myLocation);
+      await loadWeatherForCoordinates(coords.latitude, coords.longitude, myLocationLabel());
     },
-    () => setStatus(t().geoDenied, 'error'),
+    (error) => {
+      if (error && error.code === error.PERMISSION_DENIED) {
+        setStatus(t().geoDenied, 'error');
+        return;
+      }
+      if (error && error.code === error.TIMEOUT) {
+        setStatus(t().geoTimeout, 'error');
+        return;
+      }
+      setStatus(t().geoUnavailable, 'error');
+    },
     { enableHighAccuracy: true, timeout: REQUEST_TIMEOUT_MS }
   );
 }
@@ -519,7 +618,7 @@ async function init() {
   attachEvents();
   setLanguage('ar');
   setUnit('celsius');
-  await loadWeatherForCoordinates(24.7136, 46.6753, state.lang === 'ar' ? 'الرياض، السعودية' : 'Riyadh, Saudi Arabia');
+  await loadWeatherForCoordinates(24.7136, 46.6753, { ar: 'الرياض، السعودية', en: 'Riyadh, Saudi Arabia' });
 }
 
 init();

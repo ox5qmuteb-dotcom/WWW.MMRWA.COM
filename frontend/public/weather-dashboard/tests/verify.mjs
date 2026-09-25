@@ -9,6 +9,7 @@ const {
   convertTemperature,
   formatTemperature,
   normalizeQuery,
+  uvRiskLevel,
   validateWeatherPayload,
   wmoToDescriptor
 } = require('../weather-utils.js');
@@ -28,6 +29,9 @@ function run() {
   const ar = wmoToDescriptor(95, 'ar');
   assert.equal(en.text, 'Clear sky');
   assert.equal(ar.text, 'عاصفة رعدية');
+  assert.equal(uvRiskLevel(2.5, 'en'), 'Low');
+  assert.equal(uvRiskLevel(7, 'ar'), 'مرتفع');
+  assert.equal(uvRiskLevel(null, 'en'), 'Not available');
 
   const validPayload = {
     current: {
@@ -41,13 +45,50 @@ function run() {
       wind_speed_10m: 10
     },
     hourly: { time: ['2026-09-24T00:00'], temperature_2m: [30], weather_code: [0] },
-    daily: { time: ['2026-09-24'], temperature_2m_max: [35], temperature_2m_min: [23], weather_code: [0] }
+    daily: {
+      time: ['2026-09-24'],
+      temperature_2m_max: [35],
+      temperature_2m_min: [23],
+      weather_code: [0],
+      precipitation_sum: [0],
+      uv_index_max: [8]
+    }
   };
 
   const invalidPayload = { current: {}, hourly: { time: [] }, daily: {} };
+  const mismatchedDailyPayload = {
+    ...validPayload,
+    daily: { ...validPayload.daily, temperature_2m_min: [23, 24] }
+  };
+  const invalidHourlyPayload = {
+    ...validPayload,
+    hourly: { ...validPayload.hourly, weather_code: ['bad'] }
+  };
+  const invalidCurrentPayload = {
+    ...validPayload,
+    current: { ...validPayload.current, temperature_2m: 'warm' }
+  };
+  const invalidDailyWeatherCodePayload = {
+    ...validPayload,
+    daily: { ...validPayload.daily, weather_code: [0, 1] }
+  };
+  const validPayloadWithoutOptionalDailyFields = {
+    ...validPayload,
+    daily: {
+      time: ['2026-09-24'],
+      temperature_2m_max: [35],
+      temperature_2m_min: [23],
+      weather_code: [0]
+    }
+  };
 
   assert.equal(validateWeatherPayload(validPayload), true);
   assert.equal(validateWeatherPayload(invalidPayload), false);
+  assert.equal(validateWeatherPayload(mismatchedDailyPayload), false);
+  assert.equal(validateWeatherPayload(invalidHourlyPayload), false);
+  assert.equal(validateWeatherPayload(invalidCurrentPayload), false);
+  assert.equal(validateWeatherPayload(invalidDailyWeatherCodePayload), false);
+  assert.equal(validateWeatherPayload(validPayloadWithoutOptionalDailyFields), true);
 
   const dashboardHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   assert.match(dashboardHtml, /Content-Security-Policy/i, 'CSP meta tag must be present');
