@@ -34,7 +34,7 @@ See `docs/project-structure.md` for the full structure.
 ## CI/CD
 
 - CI workflow checks repository baseline quality.
-- CD workflow publishes the repository content via GitHub Pages when configured.
+- CD workflow deploys `frontend/public` to GitHub Pages on pushes to `main` and on manual dispatch.
 
 ## License
 

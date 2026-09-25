@@ -39,7 +39,7 @@ individual is officially representing the project in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers by opening a private security advisory.
+reported to the project maintainers at conduct@mmrwa.com.
 
 ## Attribution
 
