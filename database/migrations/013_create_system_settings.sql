@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS system_settings (
+  id BIGSERIAL PRIMARY KEY,
+  setting_key VARCHAR(150) NOT NULL UNIQUE,
+  setting_value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  description TEXT,
+  is_public BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

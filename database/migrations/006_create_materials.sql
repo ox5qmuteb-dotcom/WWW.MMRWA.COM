@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS materials (
+  id BIGSERIAL PRIMARY KEY,
+  category_id BIGINT REFERENCES material_categories(id) ON DELETE SET NULL,
+  author_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(280) NOT NULL UNIQUE,
+  content TEXT,
+  status VARCHAR(30) NOT NULL DEFAULT 'draft',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

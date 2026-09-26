@@ -1,0 +1,147 @@
+BEGIN;
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS roles (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL UNIQUE,
+  slug VARCHAR(120) NOT NULL UNIQUE,
+  description TEXT,
+  is_system BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS permissions (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  name VARCHAR(150) NOT NULL UNIQUE,
+  slug VARCHAR(170) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  permission_id BIGINT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+  PRIMARY KEY (role_id, permission_id)
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  role_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE RESTRICT,
+  name VARCHAR(150) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'active',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS material_categories (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  parent_id BIGINT REFERENCES material_categories(id) ON DELETE SET NULL,
+  name VARCHAR(150) NOT NULL,
+  slug VARCHAR(170) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS materials (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  category_id BIGINT REFERENCES material_categories(id) ON DELETE SET NULL,
+  author_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(280) NOT NULL UNIQUE,
+  content TEXT,
+  status VARCHAR(30) NOT NULL DEFAULT 'draft',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lessons (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  material_id BIGINT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(280) NOT NULL,
+  content TEXT,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (material_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS material_files (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  material_id BIGINT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+  lesson_id BIGINT REFERENCES lessons(id) ON DELETE CASCADE,
+  uploaded_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  refresh_token_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  body TEXT NOT NULL,
+  type VARCHAR(50) NOT NULL DEFAULT 'info',
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  actor_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  action VARCHAR(150) NOT NULL,
+  entity_type VARCHAR(100) NOT NULL,
+  entity_id BIGINT,
+  before_data JSONB,
+  after_data JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS activity_feed (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  activity_type VARCHAR(100) NOT NULL,
+  description TEXT NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  id BIGSERIAL PRIMARY KEY,
+  uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+  setting_key VARCHAR(150) NOT NULL UNIQUE,
+  setting_value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  description TEXT,
+  is_public BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMIT;

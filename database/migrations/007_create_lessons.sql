@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS lessons (
+  id BIGSERIAL PRIMARY KEY,
+  material_id BIGINT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(280) NOT NULL,
+  content TEXT,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (material_id, slug)
+);

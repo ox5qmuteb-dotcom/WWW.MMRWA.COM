@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS material_categories (
+  id BIGSERIAL PRIMARY KEY,
+  parent_id BIGINT REFERENCES material_categories(id) ON DELETE SET NULL,
+  name VARCHAR(150) NOT NULL,
+  slug VARCHAR(170) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

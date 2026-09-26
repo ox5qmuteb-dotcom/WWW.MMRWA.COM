@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS material_files (
+  id BIGSERIAL PRIMARY KEY,
+  material_id BIGINT NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+  lesson_id BIGINT REFERENCES lessons(id) ON DELETE CASCADE,
+  uploaded_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_path TEXT NOT NULL,
+  file_size BIGINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
