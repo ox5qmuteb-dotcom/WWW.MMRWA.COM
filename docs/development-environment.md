@@ -11,7 +11,7 @@
 2. Create a local branch from `main`.
 3. Copy environment templates as needed:
    - `.env.example` -> `.env`
-   - `config/app.config.example.yml` -> `config/app.config.local.yml`
+   - `config/app.config.example.yml` -> your local config file
 
 ## Workflow
 
