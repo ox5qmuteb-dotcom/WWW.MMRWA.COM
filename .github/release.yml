@@ -6,9 +6,11 @@ changelog:
     - title: "🚀 Features"
       labels:
         - enhancement
+        - feature
     - title: "🐛 Fixes"
       labels:
         - bug
+        - fix
     - title: "🧹 Maintenance"
       labels:
         - chore

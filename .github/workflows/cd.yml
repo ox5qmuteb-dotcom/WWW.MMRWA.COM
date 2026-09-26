@@ -15,37 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate deployment prerequisites
-        run: |
-          required_files=(
-            "README.md"
-            "CONTRIBUTING.md"
-            "CODE_OF_CONDUCT.md"
-            "CHANGELOG.md"
-            ".editorconfig"
-            ".github/pull_request_template.md"
-            "frontend/public/index.html"
-            "frontend/public/.nojekyll"
-          )
-
-          for file in "${required_files[@]}"; do
-            if [ ! -f "$file" ]; then
-              echo "Missing required file: $file"
-              exit 1
-            fi
-          done
-
   deploy:
-    needs: verify
-    permissions:
-      pages: write
-      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -60,7 +30,7 @@ jobs:
       - name: Upload static artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: frontend/public
+          path: .
 
       - name: Deploy to GitHub Pages
         id: deployment

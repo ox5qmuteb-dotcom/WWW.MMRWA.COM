@@ -2,31 +2,18 @@
 
 ```text
 .
-├── .editorconfig
-├── .env.example
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.yml
-│   │   ├── config.yml
-│   │   └── feature_request.yml
+│   ├── workflows/
 │   ├── pull_request_template.md
-│   ├── release.yml
-│   └── workflows/
-│       ├── cd.yml
-│       └── ci.yml
-├── .gitignore
+│   └── release.yml
 ├── backend/
-│   └── README.md
 ├── config/
-│   └── app.config.example.yml
 ├── docs/
 ├── frontend/
-│   ├── README.md
-│   └── public/
-│       ├── .nojekyll
-│       └── index.html
 ├── CHANGELOG.md
 ├── CODE_OF_CONDUCT.md
 ├── CONTRIBUTING.md
+├── LICENSE
 └── README.md
 ```

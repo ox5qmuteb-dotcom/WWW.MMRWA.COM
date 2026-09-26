@@ -21,7 +21,6 @@ Gemfile.lock
 .env
 .env.local
 .env.*.local
-config/app.config.local.yml
 
 # Logs
 logs/
